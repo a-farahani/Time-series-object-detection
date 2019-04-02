@@ -1,13 +1,14 @@
-import argparse
-import os
-import glob
 from functools import partial
-import imageio
+import argparse
 import json
+import glob
+import os
 
-import joblib
 import numpy as np
+
 from extraction import NMF
+import imageio
+import joblib
 
 
 def fit_NMF(data, n_comps=3, iters=50, percentile=95, chunk_size=(60, 60),
@@ -84,7 +85,7 @@ def NMF_helper(datafile, outpath, save_individual, nmf_args):
     regs = fit_NMF(data, n_comps=nmf_args[0], iters=nmf_args[1],
                    percentile=nmf_args[2], chunk_size=nmf_args[3],
                    overlap=nmf_args[4])
-    if(save_individual):
+    if save_individual:
         output_json(regs, outfile)
     return {"dataset": key, "regions": regs}
 
