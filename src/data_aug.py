@@ -7,6 +7,55 @@ import os
 import json
 import random
 
+def img_combine(input_path, output_path, seq):
+
+    for common_path in input_path:
+        
+        head1, tail1 = os.path.split(common_path)
+        #print(tail1)
+        img_path = sorted(glob.glob(common_path+'/images/*'))
+
+        sample1 = cv2.imread(img_path[0],0)
+        img_combined = np.zeros_like(sample1)
+        #img_combined = img_combined    
+        
+        # if tail1 == "neurofinder.03.00.test":
+        print(output_path+tail1)
+
+
+        average = cv2.imread(img_path[0]).astype(np.float)
+        average_t = average
+        for i,img_file in enumerate(img_path[1:]):
+            head2, tail2 = os.path.split(img_file)  
+            if tail1 == "neurofinder.03.00.test":
+                img = cv2.imread(img_file)
+                #print(os.path.join(output_path,tail1,tail2))
+                
+                average_t += img
+                
+                # img1 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                # img1 = cv2.medianBlur(img1,13)
+                # img_combined = np.maximum(img_combined,img1)
+                
+                if 'test' in tail1:
+                    if not os.path.exists(output_path+tail1):
+                        os.mkdir(output_path+tail1) 
+                    average += img
+            average_t /= len(img_path)
+            #average_t -= average_noise
+            output_t = cv2.normalize(average_t, None, 0, 255, cv2.NORM_MINMAX)
+            try:
+                if not os.path.exists(output_path):
+                    os.makedirs(output_path)
+
+            except OSError:
+                print ('Error: Creating directory of data')
+            cv2.imwrite(output_path+'/'+tail1+'.png', output_t)
+
+
+
+
+
 #creating masks from json files for trainig dataset
 def mask_gen(img_path, json_path, dataset_path):
 
@@ -164,7 +213,7 @@ def main():
         os.makedirs(dataset_path+'/validate/masks')
 
 
-    
+    img_combine(input_path, output_path)
     mask_gen(source_path, json_path, dataset_path)
 
     img_slice(dataset_path)
