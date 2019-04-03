@@ -113,7 +113,7 @@ def NMF_helper(datafile, outpath, save_individual, nmf_args, custom_config):
         regs = fit_NMF(data, conf[0], conf[1], conf[2], conf[3], conf[4])
     if save_individual:
         output_json(regs, outfile)
-    return {"dataset": key, "regions": regs}
+    return {"dataset": key[12:], "regions": regs}
 
 
 if __name__ == '__main__':
