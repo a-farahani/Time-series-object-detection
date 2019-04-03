@@ -97,12 +97,12 @@ def NMF_helper(datafile, outpath, save_individual, nmf_args, custom_config):
     custom_config : bool
         if true use best configuration, else use nmf_args.
     """
-    im_files = sorted(glob.glob(datafile + "/*"))
+    im_files = sorted(glob.glob(datafile + "/images/*"))
     data = np.array([cv2.imread(f, 0) for f in im_files])
     data = cv2.normalize(data, None, alpha=0, beta=1,
                          norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
     key = datafile.split(os.sep)[-1]
-    fname = "{}.jason".format(key)
+    fname = "{}.json".format(key)
     outfile = os.path.join(outpath, fname)
     regs = fit_NMF(data, n_comps=nmf_args[0], iters=nmf_args[1],
                    percentile=nmf_args[2], chunk_size=nmf_args[3],
@@ -163,7 +163,7 @@ if __name__ == '__main__':
     # find NMF in parallel with joblib
     out = joblib.Parallel(n_jobs=args['n_jobs'], verbose=10)(
         joblib.delayed(NMF_helper)
-        (d, args['output'], args['save_individual'], nmf_args, custom_config)
+        (d, args['output'], args['save_individual'], nmf_args, args['custom_config'])
         for d in datapaths
     )
 

@@ -37,10 +37,10 @@ def main():
         os.makedirs(args['output'] + '/test/data/')
 
     print("Creating an image per video...")
-    image_dict = combine(args['input'])
+    combine(args['input'], args['output'])
 
     print("Generating a mask per video...")
-    json_to_mask(args['input'], args['output'], image_dict)
+    json_to_mask(args['input'], args['output'])
 
     print("augmenting the dataset...")
     slicer(args['output'])

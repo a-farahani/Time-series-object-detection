@@ -12,7 +12,7 @@ import image_slicer
 import cv2
 
 
-def combine(input_path):
+def combine(input_path, output_path):
     """
     create an image per video by taking average of all frames.
 
@@ -20,13 +20,11 @@ def combine(input_path):
     ----------
     input_path : string
         path to the dataset
-
-    Returns
-    -------
-    a dictionary of averaged image per video
+    output_path : string
+        path to the output directory
     """
 
-    output_dict = {}
+    # output_dict = {}
     video_dirs = os.listdir(input_path)
     for video_dir in video_dirs:
         img_path = sorted(glob.glob(os.path.join(input_path, video_dir) +
@@ -34,17 +32,20 @@ def combine(input_path):
 
         average = cv2.imread(img_path[0], 0).astype(np.float)
         for img_file in img_path[1:]:
-            img = cv2.imread(img_file)
+            img = cv2.imread(img_file, 0)
             average += img
 
         average /= len(img_path)
         average = cv2.normalize(average, None, 0, 255, cv2.NORM_MINMAX)
-        output_dict[video_dir] = average
+        if 'test' not in video_dir:
+            cv2.imwrite(output_path + '/train/data/' + video_dir +
+                        '.png', average)
+        else:
+            cv2.imwrite(output_path + '/test/data/' + video_dir +
+                        '.png', average)
 
-    return output_dict
 
-
-def json_to_mask(input_path, output_path, image_dict):
+def json_to_mask(input_path, output_path):
     """
     creates masks from json files
 
@@ -53,24 +54,22 @@ def json_to_mask(input_path, output_path, image_dict):
     input_path : string
         path to the dataset
     output_path : string
-        path to the output directory
-    image_dict : dictionary
-        stores one image (average) per video.
-
-    Returns
-    -------
-    None
+        path to save mask files
     Raises
     ------
     OSError if the output path does not exist.
     """
+    video_dirs = os.listdir(input_path)
 
-    for (video_dir, avg_image) in image_dict.items():
+    for video_dir in video_dirs:
+        img_path = os.listdir(os.path.join(input_path, video_dir) + '/images/')
 
         # crate mask for train data only
-
         if 'test' not in video_dir:
+            avg_image = cv2.imread(os.path.join(input_path, video_dir) +
+                                   '/images/' + img_path[0])
             mask = np.zeros_like(avg_image)
+            mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
             mask = np.transpose(mask)
             mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
 
@@ -92,15 +91,10 @@ def json_to_mask(input_path, output_path, image_dict):
                 mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
                 mask = mask / 255
                 try:
-                    cv2.imwrite(output_path + '/train/data/' +
-                                video_dir + '.png', avg_image)
                     cv2.imwrite(output_path + '/train/masks/' +
                                 video_dir + '.png', mask)
                 except OSError:
                     raise OSError('output directory does not exist!')
-        else:
-            cv2.imwrite(output_path + '/test/data/' + video_dir + '.png',
-                        avg_image)
 
 
 def slicer(path):
@@ -112,10 +106,6 @@ def slicer(path):
     path : string
         specifies the working directory for reading and writing
         images and their masks.
-
-    Returns
-    -------
-    None
     """
 
     img_path = path + '/train/data/'
