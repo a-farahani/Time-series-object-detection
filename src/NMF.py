@@ -5,10 +5,10 @@ import glob
 import os
 
 import numpy as np
-
 from extraction import NMF
 import imageio
 import joblib
+import cv2
 
 
 def fit_NMF(data, n_comps=3, iters=50, percentile=95, chunk_size=(60, 60),
@@ -62,7 +62,25 @@ def output_json(regions, outfile):
         json.dump(regions, outF)
 
 
-def NMF_helper(datafile, outpath, save_individual, nmf_args):
+def config(key):
+    if '00.00' in key:
+        conf = (10, 20, 95, (50, 50), 0.1)
+    elif '00.01' in key or '01.00' in key:
+        conf = (5, 30, 95, (50, 50), 0.1)
+    elif '01.01' in key:
+        conf = (3, 50, 95, (50, 50), 0.1)
+    elif '02.00' in key or '02.01' in key:
+        conf = (5, 50, 99, (100, 100), 0.1)
+    elif '03.00' in key:
+        conf = (10, 30, 95, (50, 50), 0.1)
+    elif '04.00' in key:
+        conf = (5, 50, 99, (50, 50), 0.1)
+    elif '04.01' in key:
+        conf = (3, 50, 95, (60, 60), 0.1)
+    return conf
+
+
+def NMF_helper(datafile, outpath, save_individual, nmf_args, custom_config):
     """
     helper function to load data and run fit_NMF
 
@@ -76,15 +94,23 @@ def NMF_helper(datafile, outpath, save_individual, nmf_args):
         if true calls output_json, else simply returns dictionary
     nmf_args : list
         list of each parameter for the NMF model
+    custom_config : bool
+        if true use best configuration, else use nmf_args.
     """
-    im_files = sorted(glob.glob(datafile+"/*"))
-    data = np.array([imageio.imread(f) for f in im_files])
+    im_files = sorted(glob.glob(datafile + "/*"))
+    data = np.array([cv2.imread(f, 0) for f in im_files])
+    data = cv2.normalize(data, None, alpha=0, beta=1,
+                         norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
     key = datafile.split(os.sep)[-1]
     fname = "{}.jason".format(key)
     outfile = os.path.join(outpath, fname)
     regs = fit_NMF(data, n_comps=nmf_args[0], iters=nmf_args[1],
                    percentile=nmf_args[2], chunk_size=nmf_args[3],
                    overlap=nmf_args[4])
+
+    if custom_config:
+        conf = config(key)
+        regs = fit_NMF(data, conf[0], conf[1], conf[2], conf[3], conf[4])
     if save_individual:
         output_json(regs, outfile)
     return {"dataset": key, "regions": regs}
@@ -118,7 +144,8 @@ if __name__ == '__main__':
                         help="width and height of chunk, two values")
     parser.add_argument("--overlap", type=float, default=0.1,
                         help="value determining whether to merge")
-
+    parser.add_argument("--custom_config", type=bool, default=False,
+                        help="if true use best configuration")
     args = vars(parser.parse_args())
     if not os.path.exists(args['output']):
         os.mkdir(args['output'])
@@ -136,7 +163,7 @@ if __name__ == '__main__':
     # find NMF in parallel with joblib
     out = joblib.Parallel(n_jobs=args['n_jobs'], verbose=10)(
         joblib.delayed(NMF_helper)
-        (d, args['output'], args['save_individual'], nmf_args)
+        (d, args['output'], args['save_individual'], nmf_args, custom_config)
         for d in datapaths
     )
 
