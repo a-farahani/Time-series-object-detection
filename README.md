@@ -63,8 +63,9 @@ The code in this repository is free software: you can redistribute it and/or mod
 
 For questions please email one of the authors: 
 
-**durden4th@gmail.com**
 
 **a.farahani@uga.edu**
+
+**durden4th@gmail.com**
 
 **saedr@uga.edu**
